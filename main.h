@@ -16,7 +16,7 @@
 #include "stribog.h"
 #include "test_data.h"
 
-#define CPU_MHZ 1597 // Clock rate in MHz
+//#define CPU_MHZ 1597 // Clock rate in MHz
 //#define CPU_MHZ 2930 // Clock rate in MHz
 
 #ifndef CPU_MHZ
