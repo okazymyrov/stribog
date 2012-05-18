@@ -1,9 +1,10 @@
 TARGET     = stribog
 CC         = gcc
-CCOPT      = -O3 -Wall -funroll-all-loops -fmerge-all-constants -fomit-frame-pointer #-m64 #-g -E  
+CCOPT      = -O3 -Wall -ggdb #-m64 #-g -E  
+FOPT       = -march=native -flto -static -ftree-vectorize -fno-bounds-check
 DEFS       =
 INCLS      = -I./
-CFLAGS     = $(CCOPT) $(DEFS) $(INCLS)
+CFLAGS     = $(CCOPT) $(DEFS) $(INCLS) $(FOPT)
 LDFLAGS    = 
 LIBS       = -lm -lpthread
 NETLIBS    = 
