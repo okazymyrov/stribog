@@ -7,13 +7,13 @@ load Tools.sage
 class Stribog(SageObject):
 	def __init__(self, **kwargs):
 		r'''
-			Native implimenstation of hash function Stribog.
+			Native implementation of hash function Stribog (GOST 34.11-2012).
 		'''
-		self.tools = Tools() # It is class provides additional functionality
+		self.tools = Tools() # Tools class provides additional functionality
 
 	def __compress(self,Nn,h,m):
 		r'''
-			Realization g_N(h,m)
+			Realization of g_N(h,m)
 		'''
 		K = h ^^ Nn
 
@@ -33,7 +33,7 @@ class Stribog(SageObject):
 
 	def __E(self,K,m):
 		r'''
-			Encryption procedure
+			Encryption (block cipher) procedure
 		'''
 		Ki    = K
 		state = m ^^ Ki
@@ -56,7 +56,7 @@ class Stribog(SageObject):
 
 	def hash(self):
 		r'''
-			Process stage 1, 2 and 3
+			Realization of stages 1, 2 and 3.
 		'''
 		try:
 			if self.__message == None:
@@ -74,7 +74,7 @@ class Stribog(SageObject):
 
 	def __KeySchedule(self,K,i):
 		r'''
-			Function generate K_{i+1} key
+			Generate K_{i+1} key
 		'''
 		Ki = K ^^ C[i]
 		
@@ -91,7 +91,7 @@ class Stribog(SageObject):
 
 	def __L(self,state):
 		r'''
-			Multiplication by matrix A
+			The sates is multiplied with the matrix A.
 		'''
 		t = 0
 		
@@ -104,7 +104,7 @@ class Stribog(SageObject):
 		
 	def __P(self,state):
 		r'''
-			Matrix Transposition operaion
+			Provide matrix transposition
 		'''
 		t = state.digits(base=2^8,padto=64)
 
@@ -116,7 +116,7 @@ class Stribog(SageObject):
 		
 	def __S(self,state):
 		r'''
-			SubBytes procedure
+			Substitute each byte of the state using substitution defined in Data.sage 
 		'''		
 		t = state.digits(base=2^8,padto=64)
 		
@@ -128,7 +128,7 @@ class Stribog(SageObject):
 		
 	def selfTesting(self):
 		r'''
-			Testing class using data from specification
+			Test class using data from the specification
 		'''
 		M1 = 0x323130393837363534333231303938373635343332313039383736353433323130393837363534333231303938373635343332313039383736353433323130
 		M2 = 0xfbe2e5f0eee3c820fbeafaebef20fffbf0e1e0f0f520e0ed20e8ece0ebe5f0f2f120fff0eeec20f120faf2fee5e2202ce8f6f3ede220e8e6eee1e8f0f2d1202ce8f0f2e5e220e5d1
@@ -170,10 +170,14 @@ class Stribog(SageObject):
 		
 	def setMessage(self, **kwargs):
 		r'''
-			Arguments:
-				message - a bit string for hashing
-				length  - length of 'message' in bits
-				version - length of the hash value. Can take values "256" and "512".
+
+		INPUT:
+
+		- message - Integer the bit string for hashing
+
+		- length  - integer the length of ``message`` in bits
+
+		- version - string (default: "512") the length of the hash value. It can takes values "256" or "512".
 		'''
 		self.__message = kwargs.get('message',None)
 		self.__message_length = kwargs.get('length',None)
@@ -190,7 +194,7 @@ class Stribog(SageObject):
 
 	def __stage1(self):
 		r'''
-			Function implements stage 1 (8.1)
+			Implement stage 1 (8.1)
 		'''		
 
 		if self.__version == "512":
@@ -205,7 +209,7 @@ class Stribog(SageObject):
 		
 	def __stage2(self):
 		r'''
-			Function implements stage 2 (8.2)
+			Implement stage 2 (8.2)
 		'''		
 		while (self.__length >= 512):
 			self.__m = self.__M & ((1<<512) - 1) # 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
@@ -218,7 +222,7 @@ class Stribog(SageObject):
 
 	def __stage3(self):
 		r'''
-			Function implements stage 3 (8.3)
+			Implement stage 3 (8.3)
 		'''
 		self.__m = self.__M ^^ (1 << self.__length)
 		#print "m={0}".format(hex(self.__m).zfill(128))

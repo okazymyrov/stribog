@@ -11,20 +11,9 @@
 #include <memory.h>
 #include <math.h>
 
-#include "stribog.h"
 #include "stribog_data.h"
 
-void LOG_state(char *var, unsigned char *state, unsigned long long len)
-{
-	unsigned long long i = 0;
-
-	printf("%s: ",var);
-	for(i=0;i<len;i++)
-		printf("%.2x",state[i]);
-	printf("\n");
-}
-
-void AddModulo512(unsigned char *a,unsigned char *b,unsigned char *c)
+void AddModulo512(const unsigned char *a,const unsigned char *b,unsigned char *c)
 {
 	int i = 0, t = 0;
 
@@ -35,10 +24,11 @@ void AddModulo512(unsigned char *a,unsigned char *b,unsigned char *c)
 	}
 }
 
-void AddXor512(void *a,void *b,void *c)
+void AddXor512(const void *a,const void *b,void *c)
 {
 	int i = 0;
-	unsigned long long *A=a, *B=b, *C=c;
+	const long long *A=a, *B=b;
+	unsigned long long *C=c;
 
 	for(i=0;i<8;i++)
 	{
@@ -101,7 +91,7 @@ void KeySchedule(unsigned char *K,int i)
     L(K);
 }
 
-void E(unsigned char *K,unsigned char *m, unsigned char *state)
+void E(unsigned char *K,const unsigned char *m, unsigned char *state)
 {
 	int i = 0;
 
@@ -119,9 +109,9 @@ void E(unsigned char *K,unsigned char *m, unsigned char *state)
     }
 }
 
-void g_N(unsigned char *N,unsigned char *h,unsigned char *m)
+void g_N(const unsigned char *N,unsigned char *h,const unsigned char *m)
 {
-	unsigned char K[64] = {}, t[64] = {};
+	unsigned char t[64], K[64];
 
 	AddXor512(N,h,K);
 
@@ -135,7 +125,7 @@ void g_N(unsigned char *N,unsigned char *h,unsigned char *m)
     AddXor512(t,m,h);
 }
 
-void hash_X(unsigned char *IV,unsigned char *message,unsigned long long length,unsigned char *out)
+void hash_X(unsigned char *IV,const unsigned char *message,unsigned long long length,unsigned char *out)
 {
 	unsigned char v512[64] = {
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -149,19 +139,26 @@ void hash_X(unsigned char *IV,unsigned char *message,unsigned long long length,u
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	};
-	unsigned char Sigma[64] = {}, N[64] = {}, m[64] = {}, hash[64] = {}, *M=NULL;
+	unsigned char Sigma[64] = {
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	};
+	unsigned char N[64] = {
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	};
+	unsigned char m[64], *hash = IV;
 	unsigned long long len = length;
-
-	// Stage 1
-	memcpy(hash,IV,64);
-
-	M = (unsigned char *)calloc(ceil((double)len/(double)8),sizeof(unsigned char));
-	memcpy(M, message, (len-3)/8 + 1);
 
 	// Stage 2
 	while (len >= 512)
 	{
-		memcpy(m, M + (len-3)/8-63, 64);
+		memcpy(m, message + len/8 - 63 - ( (len & 0x7) == 0 ), 64);
+
 		g_N(N,hash,m);
 		AddModulo512(N,v512,N);
 		AddModulo512(Sigma,m,Sigma);
@@ -169,27 +166,25 @@ void hash_X(unsigned char *IV,unsigned char *message,unsigned long long length,u
 	}
 
 	memset(m,0,64);
-	memcpy(m + 63 - (len-3)/8, M, (len-3)/8 + 1);
+	memcpy(m + 63 - len/8 + ( (len & 0x7) == 0 ), message, len/8 + 1 - ( (len & 0x7) == 0 ));
 
 	// Stage 3
-	m[ 63 - (int)(len/8) ] |= 1 << (len % 8);
+	m[ 63 - len/8 ] |= (1 << (len & 0x7));
 
 	g_N(N,hash,m);
 	v512[63] = len & 0xFF;
-	v512[62] = (len & 0xFF00) >> 8;
+	v512[62] = len >> 8;
 	AddModulo512(N,v512,N);
+
 	AddModulo512(Sigma,m,Sigma);
 
 	g_N(v0,hash,N);
 	g_N(v0,hash,Sigma);
 
 	memcpy(out, hash, 64);
-
-	if(M != NULL)
-		free(M);
 }
 
-void hash_512(unsigned char *message,unsigned long long length,unsigned char *out)
+void hash_512(const unsigned char *message,unsigned long long length,unsigned char *out)
 {
 	unsigned char IV[64] =
 	{
@@ -202,7 +197,7 @@ void hash_512(unsigned char *message,unsigned long long length,unsigned char *ou
 	hash_X(IV,message,length,out);
 }
 
-void hash_256(unsigned char *message,unsigned long long length,unsigned char *out)
+void hash_256(const unsigned char *message,unsigned long long length,unsigned char *out)
 {
 	unsigned char IV[64] =
 	{
@@ -211,7 +206,7 @@ void hash_256(unsigned char *message,unsigned long long length,unsigned char *ou
 			0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
 			0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01
 	};
-	unsigned char hash[64] = {};
+	unsigned char hash[64];
 
 	hash_X(IV,message,length,hash);
 

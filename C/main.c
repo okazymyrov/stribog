@@ -1,13 +1,14 @@
 /*
  * main.c
  *
- *  Created on: May 5, 2012
+ *  Created on: Feb 15, 2013
  *      Author: Oleksandr Kazymyrov
  *		Acknowledgments: Oleksii Shevchuk
  */
 
 #include "main.h"
 
+#ifdef SELF_TESTING
 void self_testing()
 {
 	unsigned char h512[64]={}, h256[32] = {};
@@ -22,6 +23,7 @@ void self_testing()
 			printf("  SelfTesting: Fail\n");
 			printf("    Version: 512\n");
 			printf("    Message: %d\n",i);
+			printf("    Length: %lld\n",MessageLength[i]);
 			return;
 		}
 
@@ -38,55 +40,77 @@ void self_testing()
 
 	printf("  SelfTesting: Pass\n");
 }
-
-unsigned int get_random_number(int bits)
+#endif
+// It is not a cryptographic secure pseudorandom number generator
+// 1 < bits < 64
+unsigned long long get_random_number(unsigned long long bits)
 {
-    unsigned int rnd=0;
+    srand(__rdtsc());
 
-    rnd=(unsigned int)__rdtsc();
-
-    return ( (unsigned int) ( ((unsigned long long)1<<bits)  * ((double)rand_r(&rnd) / (double)RAND_MAX  )) )&( ((unsigned long long)1<<bits) - 1);
+    return ( (unsigned long long) ( (((unsigned long long)1<<bits)-(bits == 64 ? 2:1))  * ((long double)rand()/(long double)RAND_MAX) ) ) & ( ((unsigned long long)1<<bits) - (bits == 64 ? 2:1));
 }
 
-void performance_test()
+void test_permofance(unsigned long long n_tests, unsigned long long n_blocks)
 {
-	unsigned long long clk=0, i=0, N_test = 20000; // 2000000
+	unsigned long long i = 0, message_length = 0, block_length = 0;
+	long double perfomance_rate = 0, block_rate = 0, nseconds = 0;
+	unsigned char *h512 = NULL;
+	clock_t begin = 0, end = 0;
+
+	unsigned long long block_size_bits = 512, block_size_bytes;
+
 	char cipher_name[]="Stribog";
-	long double rate=0, Mbit=0;
 
-	unsigned char h512[64] = {
-		0xd8,0xd9,0x9f,0x12,0x8d,0x9f,0x2b,0x9e,0xf2,0x66,0x4a,0x9a,0xdd,0x08,0x9f,0xfa,
-		0xfc,0xdc,0x7a,0x39,0x59,0x64,0x64,0x4e,0x4a,0x46,0x4f,0x26,0x0c,0x8e,0x64,0xc4,
-		0x1d,0x98,0x84,0xc7,0x94,0xfb,0x0b,0x74,0x68,0xe0,0x64,0xc6,0x7d,0x7a,0xf1,0xe9,
-		0x30,0x2c,0x80,0xdd,0x4f,0xc0,0x37,0x04,0x54,0xd8,0x79,0xcb,0x4a,0xa2,0xcf,0x87
-	};
+	if (n_blocks  == 1)
+		block_size_bits = 511;
 
-	for(i=0;i<64;i++)
+	block_size_bytes = block_size_bits/8;
+
+	h512 = calloc(sizeof(unsigned char),n_blocks*block_size_bytes);
+
+	for(i=0;i<n_blocks*block_size_bytes;i++)
 	{
 		h512[i]=(unsigned char)get_random_number(8);
 	}
 
-	hash_512(h512,511,h512);
-	clk = __rdtsc();
-	//////////////////////////
-	for(i=0; i<N_test; i++)
-		hash_512(h512,511,h512);
-	//////////////////////////
-	clk = __rdtsc() - clk;
+	hash_512(h512,n_blocks*block_size_bits,h512); 
 
-	Mbit = 512; // block in bits
-	rate = N_test;
-	rate /= clk;
-	rate *= 1000*1000; rate *= CPU_MHZ;
-	Mbit /= (1024*1024);
+	begin = clock();
+	//////////////////////////
+	for(i=0; i<n_tests; i++)
+		hash_512(h512,n_blocks*block_size_bits,h512);
+	//////////////////////////
+	end = clock();
+
+	nseconds =  (long double)(end - begin) / CLOCKS_PER_SEC;
+
+	message_length = n_tests*n_blocks*block_size_bits; // input message in bits
+	block_length = n_tests;
+
+	block_rate = (long double)block_length/nseconds;
+	perfomance_rate = (long double)message_length/nseconds;
+
+	perfomance_rate /= (1024*1024); // rate in Mbit/s
+
+	printf("  Number of blocks: %lld Number of tests: %lld\n",n_blocks,n_tests);
 	printf("  Hash = %s\n",cipher_name);
-	printf("  Performance: %.2Lf Blk/sec = %.3Lf MBit/sec = %lld ticks\n\n",rate, rate*Mbit,clk/N_test);
+	printf("  Perfomance: %.2Lf Blk/s = %.3Lf MBit/s \n\n",block_rate, perfomance_rate);
+
+	if(h512)
+		free(h512);
 }
 
 int main()
 {
+#ifdef SELF_TESTING
 	self_testing();
-	performance_test();
+#endif
+	int i = 0;
+
+	for(i=0;i<23;i++)
+	{
+		test_permofance(1<<(22-i),1<<i);
+	}
 
 	return 0;
 }

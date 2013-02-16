@@ -1,7 +1,7 @@
 /*
  * main.h
  *
- *  Created on: May 5, 2012
+ *  Created on: Feb 15, 2013
  *      Author: Oleksandr Kazymyrov
  *		Acknowledgments: Oleksii Shevchuk
  */
@@ -17,14 +17,7 @@
 #include "stribog.h"
 #include "test_data.h"
 
-//#define CPU_MHZ 1597 // Clock rate in MHz
-//#define CPU_MHZ 2930 // Clock rate in MHz
-
-#ifndef CPU_MHZ
-#error The parameter CPU_MHZ is required!
-#endif
-
-#ifdef __linux__
+#ifndef __linux__
 #define __rdtsc() \
        ({  unsigned int _a = 0 ; \
            unsigned int _d = 0; \

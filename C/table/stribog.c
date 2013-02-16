@@ -1,7 +1,7 @@
 /*
  * stribog.c
  *
- *  Created on: May 5, 2012
+ *  Created on: Feb 15, 2013
  *      Author: Oleksandr Kazymyrov
  *		Acknowledgments: Oleksii Shevchuk
  */
@@ -11,214 +11,249 @@
 #include <memory.h>
 #include <math.h>
 
-#include "stribog.h"
 #include "stribog_data.h"
 
-void LOG_state(char *var, unsigned char *state, unsigned long long len)
+void AddModulo512(const void *a,const void *b,void *c)
 {
-	unsigned long long i = 0;
+	const unsigned char *A=a, *B=b;
+	unsigned char *C=c;
+	int t = 0;
+#ifdef FULL_UNROLL
+#define ADDBYTE_8(i) t = A[i] + B[i] + (t >> 8); C[i] = t & 0xFF;
 
-	printf("%s: ",var);
-	for(i=0;i<len;i++)
-		printf("%.2x",state[i]);
-	printf("\n");
-}
+	ADDBYTE_8(63)
+	ADDBYTE_8(62)
+	ADDBYTE_8(61)
+	ADDBYTE_8(60)
+	ADDBYTE_8(59)
+	ADDBYTE_8(58)
+	ADDBYTE_8(57)
+	ADDBYTE_8(56)
+	ADDBYTE_8(55)
+	ADDBYTE_8(54)
+	ADDBYTE_8(53)
+	ADDBYTE_8(52)
+	ADDBYTE_8(51)
+	ADDBYTE_8(50)
+	ADDBYTE_8(49)
+	ADDBYTE_8(48)
+	ADDBYTE_8(47)
+	ADDBYTE_8(46)
+	ADDBYTE_8(45)
+	ADDBYTE_8(44)
+	ADDBYTE_8(43)
+	ADDBYTE_8(42)
+	ADDBYTE_8(41)
+	ADDBYTE_8(40)
+	ADDBYTE_8(39)
+	ADDBYTE_8(38)
+	ADDBYTE_8(37)
+	ADDBYTE_8(36)
+	ADDBYTE_8(35)
+	ADDBYTE_8(34)
+	ADDBYTE_8(33)
+	ADDBYTE_8(32)
+	ADDBYTE_8(31)
+	ADDBYTE_8(30)
+	ADDBYTE_8(29)
+	ADDBYTE_8(28)
+	ADDBYTE_8(27)
+	ADDBYTE_8(26)
+	ADDBYTE_8(25)
+	ADDBYTE_8(24)
+	ADDBYTE_8(23)
+	ADDBYTE_8(22)
+	ADDBYTE_8(21)
+	ADDBYTE_8(20)
+	ADDBYTE_8(19)
+	ADDBYTE_8(18)
+	ADDBYTE_8(17)
+	ADDBYTE_8(16)
+	ADDBYTE_8(15)
+	ADDBYTE_8(14)
+	ADDBYTE_8(13)
+	ADDBYTE_8(12)
+	ADDBYTE_8(11)
+	ADDBYTE_8(10)
+	ADDBYTE_8(9)
+	ADDBYTE_8(8)
+	ADDBYTE_8(7)
+	ADDBYTE_8(6)
+	ADDBYTE_8(5)
+	ADDBYTE_8(4)
+	ADDBYTE_8(3)
+	ADDBYTE_8(2)
+	ADDBYTE_8(1)
+	ADDBYTE_8(0)
 
-void AddModulo512(unsigned char *a,unsigned char *b,unsigned char *c)
-{
-	int i = 0, t = 0;
+#else
+	int i = 0;
 
 	for(i=63;i>=0;i--)
 	{
-		t = a[i] + b[i] + (t >> 8);
-		c[i] = t & 0xFF;
+		t = A[i] + B[i] + (t >> 8);
+		C[i] = t & 0xFF;
 	}
+#endif
 }
 
-void AddXor512(void *a,void *b,void *c)
+void AddXor512(const void *a,const void *b,void *c)
 {
+	const unsigned long long *A=a, *B=b;
+	unsigned long long *C=c;
+#ifdef FULL_UNROLL
+	C[0] = A[0] ^ B[0];
+	C[1] = A[1] ^ B[1];
+	C[2] = A[2] ^ B[2];
+	C[3] = A[3] ^ B[3];
+	C[4] = A[4] ^ B[4];
+	C[5] = A[5] ^ B[5];
+	C[6] = A[6] ^ B[6];
+	C[7] = A[7] ^ B[7];
+#else
 	int i = 0;
-	unsigned long long *A=a, *B=b, *C=c;
 
 	for(i=0;i<8;i++)
 	{
 		C[i] = A[i] ^ B[i];
 	}
+#endif
 }
 
 void F(unsigned char *state)
 {
-	unsigned char return_state[64]={};
-	unsigned long long t = 0;
+	unsigned long long return_state[8] = {0,0,0,0,0,0,0,0};
 
-	// i = 0
-	t ^= T[0][state[63]];
-	t ^= T[1][state[55]];
-	t ^= T[2][state[47]];
-	t ^= T[3][state[39]];
-	t ^= T[4][state[31]];
-	t ^= T[5][state[23]];
-	t ^= T[6][state[15]];
-	t ^= T[7][state[ 7]];
+	return_state[0] ^= T[0][state[56]];
+	return_state[0] ^= T[1][state[48]];
+	return_state[0] ^= T[2][state[40]];
+	return_state[0] ^= T[3][state[32]];
+	return_state[0] ^= T[4][state[24]];
+	return_state[0] ^= T[5][state[16]];
+	return_state[0] ^= T[6][state[8]];
+	return_state[0] ^= T[7][state[0]];
 
-	return_state[56] = (t >> 56) & 0xFF;
-	return_state[57] = (t >> 48) & 0xFF;
-	return_state[58] = (t >> 40) & 0xFF;
-	return_state[59] = (t >> 32) & 0xFF;
-	return_state[60] = (t >> 24) & 0xFF;
-	return_state[61] = (t >> 16) & 0xFF;
-	return_state[62] = (t >>  8) & 0xFF;
-	return_state[63] = (t      ) & 0xFF;
-	t = 0;
+	return_state[1] ^= T[0][state[57]];
+	return_state[1] ^= T[1][state[49]];
+	return_state[1] ^= T[2][state[41]];
+	return_state[1] ^= T[3][state[33]];
+	return_state[1] ^= T[4][state[25]];
+	return_state[1] ^= T[5][state[17]];
+	return_state[1] ^= T[6][state[9]];
+	return_state[1] ^= T[7][state[1]];
 
-	// i = 1
-	t ^= T[0][state[62]];
-	t ^= T[1][state[54]];
-	t ^= T[2][state[46]];
-	t ^= T[3][state[38]];
-	t ^= T[4][state[30]];
-	t ^= T[5][state[22]];
-	t ^= T[6][state[14]];
-	t ^= T[7][state[ 6]];
+	return_state[2] ^= T[0][state[58]];
+	return_state[2] ^= T[1][state[50]];
+	return_state[2] ^= T[2][state[42]];
+	return_state[2] ^= T[3][state[34]];
+	return_state[2] ^= T[4][state[26]];
+	return_state[2] ^= T[5][state[18]];
+	return_state[2] ^= T[6][state[10]];
+	return_state[2] ^= T[7][state[2]];
 
-	return_state[48] = (t >> 56) & 0xFF;
-	return_state[49] = (t >> 48) & 0xFF;
-	return_state[50] = (t >> 40) & 0xFF;
-	return_state[51] = (t >> 32) & 0xFF;
-	return_state[52] = (t >> 24) & 0xFF;
-	return_state[53] = (t >> 16) & 0xFF;
-	return_state[54] = (t >>  8) & 0xFF;
-	return_state[55] = (t      ) & 0xFF;
-	t = 0;
+	return_state[3] ^= T[0][state[59]];
+	return_state[3] ^= T[1][state[51]];
+	return_state[3] ^= T[2][state[43]];
+	return_state[3] ^= T[3][state[35]];
+	return_state[3] ^= T[4][state[27]];
+	return_state[3] ^= T[5][state[19]];
+	return_state[3] ^= T[6][state[11]];
+	return_state[3] ^= T[7][state[3]];
 
-	// i = 2
-	t ^= T[0][state[61]];
-	t ^= T[1][state[53]];
-	t ^= T[2][state[45]];
-	t ^= T[3][state[37]];
-	t ^= T[4][state[29]];
-	t ^= T[5][state[21]];
-	t ^= T[6][state[13]];
-	t ^= T[7][state[ 5]];
+	return_state[4] ^= T[0][state[60]];
+	return_state[4] ^= T[1][state[52]];
+	return_state[4] ^= T[2][state[44]];
+	return_state[4] ^= T[3][state[36]];
+	return_state[4] ^= T[4][state[28]];
+	return_state[4] ^= T[5][state[20]];
+	return_state[4] ^= T[6][state[12]];
+	return_state[4] ^= T[7][state[4]];
 
-	return_state[40] = (t >> 56) & 0xFF;
-	return_state[41] = (t >> 48) & 0xFF;
-	return_state[42] = (t >> 40) & 0xFF;
-	return_state[43] = (t >> 32) & 0xFF;
-	return_state[44] = (t >> 24) & 0xFF;
-	return_state[45] = (t >> 16) & 0xFF;
-	return_state[46] = (t >>  8) & 0xFF;
-	return_state[47] = (t      ) & 0xFF;
-	t = 0;
+	return_state[5] ^= T[0][state[61]];
+	return_state[5] ^= T[1][state[53]];
+	return_state[5] ^= T[2][state[45]];
+	return_state[5] ^= T[3][state[37]];
+	return_state[5] ^= T[4][state[29]];
+	return_state[5] ^= T[5][state[21]];
+	return_state[5] ^= T[6][state[13]];
+	return_state[5] ^= T[7][state[5]];
 
-	// i = 3
-	t ^= T[0][state[60]];
-	t ^= T[1][state[52]];
-	t ^= T[2][state[44]];
-	t ^= T[3][state[36]];
-	t ^= T[4][state[28]];
-	t ^= T[5][state[20]];
-	t ^= T[6][state[12]];
-	t ^= T[7][state[ 4]];
+	return_state[6] ^= T[0][state[62]];
+	return_state[6] ^= T[1][state[54]];
+	return_state[6] ^= T[2][state[46]];
+	return_state[6] ^= T[3][state[38]];
+	return_state[6] ^= T[4][state[30]];
+	return_state[6] ^= T[5][state[22]];
+	return_state[6] ^= T[6][state[14]];
+	return_state[6] ^= T[7][state[6]];
 
-	return_state[32] = (t >> 56) & 0xFF;
-	return_state[33] = (t >> 48) & 0xFF;
-	return_state[34] = (t >> 40) & 0xFF;
-	return_state[35] = (t >> 32) & 0xFF;
-	return_state[36] = (t >> 24) & 0xFF;
-	return_state[37] = (t >> 16) & 0xFF;
-	return_state[38] = (t >>  8) & 0xFF;
-	return_state[39] = (t      ) & 0xFF;
-	t = 0;
+	return_state[7] ^= T[0][state[63]];
+	return_state[7] ^= T[1][state[55]];
+	return_state[7] ^= T[2][state[47]];
+	return_state[7] ^= T[3][state[39]];
+	return_state[7] ^= T[4][state[31]];
+	return_state[7] ^= T[5][state[23]];
+	return_state[7] ^= T[6][state[15]];
+	return_state[7] ^= T[7][state[7]];
 
-	// i = 4
-	t ^= T[0][state[59]];
-	t ^= T[1][state[51]];
-	t ^= T[2][state[43]];
-	t ^= T[3][state[35]];
-	t ^= T[4][state[27]];
-	t ^= T[5][state[19]];
-	t ^= T[6][state[11]];
-	t ^= T[7][state[ 3]];
-
-	return_state[24] = (t >> 56) & 0xFF;
-	return_state[25] = (t >> 48) & 0xFF;
-	return_state[26] = (t >> 40) & 0xFF;
-	return_state[27] = (t >> 32) & 0xFF;
-	return_state[28] = (t >> 24) & 0xFF;
-	return_state[29] = (t >> 16) & 0xFF;
-	return_state[30] = (t >>  8) & 0xFF;
-	return_state[31] = (t      ) & 0xFF;
-	t = 0;
-
-	// i = 5
-	t ^= T[0][state[58]];
-	t ^= T[1][state[50]];
-	t ^= T[2][state[42]];
-	t ^= T[3][state[34]];
-	t ^= T[4][state[26]];
-	t ^= T[5][state[18]];
-	t ^= T[6][state[10]];
-	t ^= T[7][state[ 2]];
-
-	return_state[16] = (t >> 56) & 0xFF;
-	return_state[17] = (t >> 48) & 0xFF;
-	return_state[18] = (t >> 40) & 0xFF;
-	return_state[19] = (t >> 32) & 0xFF;
-	return_state[20] = (t >> 24) & 0xFF;
-	return_state[21] = (t >> 16) & 0xFF;
-	return_state[22] = (t >>  8) & 0xFF;
-	return_state[23] = (t      ) & 0xFF;
-	t = 0;
-
-	// i = 6
-	t ^= T[0][state[57]];
-	t ^= T[1][state[49]];
-	t ^= T[2][state[41]];
-	t ^= T[3][state[33]];
-	t ^= T[4][state[25]];
-	t ^= T[5][state[17]];
-	t ^= T[6][state[ 9]];
-	t ^= T[7][state[ 1]];
-
-	return_state[ 8] = (t >> 56) & 0xFF;
-	return_state[ 9] = (t >> 48) & 0xFF;
-	return_state[10] = (t >> 40) & 0xFF;
-	return_state[11] = (t >> 32) & 0xFF;
-	return_state[12] = (t >> 24) & 0xFF;
-	return_state[13] = (t >> 16) & 0xFF;
-	return_state[14] = (t >>  8) & 0xFF;
-	return_state[15] = (t      ) & 0xFF;
-	t = 0;
-
-	// i = 7
-	t ^= T[0][state[56]];
-	t ^= T[1][state[48]];
-	t ^= T[2][state[40]];
-	t ^= T[3][state[32]];
-	t ^= T[4][state[24]];
-	t ^= T[5][state[16]];
-	t ^= T[6][state[ 8]];
-	t ^= T[7][state[ 0]];
-
-	return_state[0] = (t >> 56) & 0xFF;
-	return_state[1] = (t >> 48) & 0xFF;
-	return_state[2] = (t >> 40) & 0xFF;
-	return_state[3] = (t >> 32) & 0xFF;
-	return_state[4] = (t >> 24) & 0xFF;
-	return_state[5] = (t >> 16) & 0xFF;
-	return_state[6] = (t >>  8) & 0xFF;
-	return_state[7] = (t      ) & 0xFF;
-
-	memcpy(state,return_state,64);
+	memcpy(state,(unsigned char*)return_state,64);
 }
 
-#define KeySchedule(K,i) \
-	AddXor512(K,C[i],K); \
-	F(K);
+#define KeySchedule(K,i) AddXor512(K,C[i],K); F(K);
 
-void E(unsigned char *K,unsigned char *m, unsigned char *state)
+void E(unsigned char *K,const unsigned char *m, unsigned char *state)
 {
+#ifdef FULL_UNROLL
+	AddXor512(m,K,state);
+
+    F(state);
+    KeySchedule(K,0);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,1);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,2);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,3);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,4);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,5);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,6);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,7);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,8);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,9);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,10);
+    AddXor512(state,K,state);
+
+    F(state);
+    KeySchedule(K,11);
+    AddXor512(state,K,state);
+#else
 	int i = 0;
 
 	AddXor512(m,K,state);
@@ -229,11 +264,12 @@ void E(unsigned char *K,unsigned char *m, unsigned char *state)
         KeySchedule(K,i);
         AddXor512(state,K,state);
     }
+#endif
 }
 
-void g_N(unsigned char *N,unsigned char *h,unsigned char *m)
+void g_N(const unsigned char *N,unsigned char *h,const unsigned char *m)
 {
-	unsigned char K[64] = {}, t[64] = {};
+	unsigned char t[64], K[64];
 
 	AddXor512(N,h,K);
 
@@ -245,7 +281,7 @@ void g_N(unsigned char *N,unsigned char *h,unsigned char *m)
     AddXor512(t,m,h);
 }
 
-void hash_X(unsigned char *IV,unsigned char *message,unsigned long long length,unsigned char *out)
+void hash_X(unsigned char *IV,const unsigned char *message,unsigned long long length,unsigned char *out)
 {
 	unsigned char v512[64] = {
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -259,19 +295,26 @@ void hash_X(unsigned char *IV,unsigned char *message,unsigned long long length,u
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	};
-	unsigned char Sigma[64] = {}, N[64] = {}, m[64] = {}, hash[64] = {}, *M=NULL;
+	unsigned char Sigma[64] = {
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	};
+	unsigned char N[64] = {
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	};
+	unsigned char m[64], *hash = IV;
 	unsigned long long len = length;
-
-	// Stage 1
-	memcpy(hash,IV,64);
-
-	M = (unsigned char *)calloc(ceil((double)len/(double)8),sizeof(unsigned char));
-	memcpy(M, message, (len-3)/8 + 1);
 
 	// Stage 2
 	while (len >= 512)
 	{
-		memcpy(m, M + (len-3)/8-63, 64);
+		memcpy(m, message + len/8 - 63 - ( (len & 0x7) == 0 ), 64);
+
 		g_N(N,hash,m);
 		AddModulo512(N,v512,N);
 		AddModulo512(Sigma,m,Sigma);
@@ -279,27 +322,25 @@ void hash_X(unsigned char *IV,unsigned char *message,unsigned long long length,u
 	}
 
 	memset(m,0,64);
-	memcpy(m + 63 - (len-3)/8, M, (len-3)/8 + 1);
+	memcpy(m + 63 - len/8 + ( (len & 0x7) == 0 ), message, len/8 + 1 - ( (len & 0x7) == 0 ));
 
 	// Stage 3
-	m[ 63 - (int)(len/8) ] |= 1 << (len % 8);
+	m[ 63 - len/8 ] |= (1 << (len & 0x7));
 
 	g_N(N,hash,m);
 	v512[63] = len & 0xFF;
-	v512[62] = (len & 0xFF00) >> 8;
+	v512[62] = len >> 8;
 	AddModulo512(N,v512,N);
+
 	AddModulo512(Sigma,m,Sigma);
 
 	g_N(v0,hash,N);
 	g_N(v0,hash,Sigma);
 
 	memcpy(out, hash, 64);
-
-	if(M != NULL)
-		free(M);
 }
 
-void hash_512(unsigned char *message,unsigned long long length,unsigned char *out)
+void hash_512(const unsigned char *message,unsigned long long length,unsigned char *out)
 {
 	unsigned char IV[64] =
 	{
@@ -312,7 +353,7 @@ void hash_512(unsigned char *message,unsigned long long length,unsigned char *ou
 	hash_X(IV,message,length,out);
 }
 
-void hash_256(unsigned char *message,unsigned long long length,unsigned char *out)
+void hash_256(const unsigned char *message,unsigned long long length,unsigned char *out)
 {
 	unsigned char IV[64] =
 	{
@@ -321,7 +362,7 @@ void hash_256(unsigned char *message,unsigned long long length,unsigned char *ou
 			0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
 			0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01
 	};
-	unsigned char hash[64] = {};
+	unsigned char hash[64];
 
 	hash_X(IV,message,length,hash);
 

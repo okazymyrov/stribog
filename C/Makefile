@@ -1,19 +1,19 @@
-TARGET     = stribog
-CC         = gcc
-CCOPT      = -O3 -Wall -march=native  
-DEFS       =
-INCLS      = -I./
-CFLAGS     = $(CCOPT) $(DEFS) $(INCLS)
-LDFLAGS    = 
-LIBS       = #-lm -lpthread
-NETLIBS    = 
-FILES	   = $(shell ls ./*.c)
+TARGET		= stribog
+CC			= gcc
+CCOPT		= -O3 -Wall -g0 -fomit-frame-pointer
+DEFS		= -DFULL_UNROLL #-DSELF_TESTING
+INCLS		= -I./
+CFLAGS		= $(CCOPT) $(DEFS) $(INCLS)
+LDFLAGS		= 
+LIBS		= 
+NETLIBS		= 
+FILES		= $(shell ls ./*.c)
+TABLE		= 1
 
-TABLE	   = 1
-ifdef TABLE
+ifeq ($(TABLE),1)
 	FILES += ./table/stribog.c
 else
-	FILES += ./etalon/stribog.c
+	FILES += ./standard/stribog.c
 endif
 
 OBJECTS    = $(FILES:.c=.o)
