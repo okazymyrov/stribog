@@ -1,9 +1,10 @@
 #!/usr/bin/env sage
-#  Created on: Feb 15, 2013
+#  Modified on: Mar 15, 2013
 #		Author: Oleksandr Kazymyrov <oleksandr.kazymyrov@uib.no>
 
 import sys
 load Stribog.sage
+load Stribog_2_8.sage
 
 def generate_test_data_h():
 	r"""
@@ -43,13 +44,36 @@ def self_testing():
 	
 	s.selfTesting()
 
+def self_testing_2_8():
+	s=Stribog()
+	s28=Stribog_2_8()
+	
+	s28.selfTesting()
+
+	M = ZZ(randint(0,2^4000-1))
+
+	s28.setMessage(message=M,length=4000,version="512")
+	s.setMessage(message=M,length=4000,version="512")
+	
+	h 	= s.hash()
+	h28 = s28.hash()
+	if h == h28:
+		print "Equivalent = True"
+	else:
+		print "Equivalent = False"
+
 def main(argv=None):
 
 	t1 = cputime()
 
 	generate_test_data_h()
 	generateTableCParameters()
+
+	print "Selftesting of the standard implementation"
 	self_testing()
+
+	print "Selftesting of the implementation over GF(2^8)"
+	self_testing_2_8()
 
 	t2 = cputime()
 	
