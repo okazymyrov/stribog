@@ -16,6 +16,13 @@ Oleksii Shevchuk for C code improvements.
 
 ## Versions
 
+### Version 1.1.1
+
+Sage
+
+* Added support of Stribog over GF(2^8)
+
+
 ### Version 1.1
 
 C
@@ -50,3 +57,4 @@ Sage:
 * [GOST R 34.11-2012 (ver.1)](https://www.tc26.ru/en/GOSTR3411-2012/ENG_GOST_R_3411-2012_v1.pdf)
 * [Presentation](https://docs.google.com/open?id=0BxESDYeDaATvZy0zRkJDcDhsM0E)
 * [The most recent version of Stribog (In Russian)](https://www.tc26.ru/forum/download/file.php?id=336&sid=ac66492ab050da628552094891eae073)
+* [MDS matrix generator](https://github.com/okazymyrov/MDS)
