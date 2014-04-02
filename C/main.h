@@ -17,7 +17,7 @@
 #include "stribog.h"
 #include "test_data.h"
 
-#ifndef __linux__
+#ifdef __linux__
 #define __rdtsc() \
        ({  unsigned int _a = 0 ; \
            unsigned int _d = 0; \
