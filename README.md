@@ -12,7 +12,7 @@ Oleksandr Kazymyrov: oleksandr.kazymyrov (at) ii.uib.no
 
 ### Acknowledgements
 
-Oleksii Shevchuk for C code improvements.
+Oleksii Shevchuk and Dmitry Olshansky for C code improvements.
 
 ## Comments
 
@@ -31,6 +31,12 @@ Moreover, decoding the last string using WIN-1251 gives "Се ветри, Стр
 Therefore, the current implementation is the proof of concept with representation given in the standard. For real applications the code must be changed to correct endianness (depends on your platform).
 
 ## Versions
+
+### Version 1.1.2
+
+C
+
+* speeded up F transformation (Dmitry Olshansky)
 
 ### Version 1.1.1
 
