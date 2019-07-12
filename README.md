@@ -1,6 +1,6 @@
 ## Overview
 
-Standard GOST 34.11-2012 "Information technology. CRYPTOGRAPHIC DATA SECURITY. Hash-functions" came into the effect in 2013. The standard is based on previously published hash function Stribog.
+Standard GOST R 34.11–2012 «Information technology. Cryptographic data security. Hash-function» came into the effect in 2013. The standard is based on previously published hash function Stribog.
 
 This project includes two implementations of the hash function in C and Sage. Sage version provides additional functionality including generating of tables and test vectors for C.
 
@@ -8,7 +8,7 @@ Propositions, comments, speedup or other improvements are welcome for both progr
 
 ## Authors
 
-Oleksandr Kazymyrov: oleksandr.kazymyrov (at) ii.uib.no
+Oleksandr Kazymyrov: okazymyrov (at) gmail.com
 
 ### Acknowledgements
 
@@ -76,7 +76,6 @@ Sage:
 
 ## References
 
-* [GOST R 34.11-2012 (Draft)](http://tk26.ru/en/GOSTR3411-2012/GOST_R_34_11-2012_eng.pdf)
-* [Presentation](https://docs.google.com/open?id=0BxESDYeDaATvZy0zRkJDcDhsM0E)
-* [The most recent version of Stribog (In Russian)](http://specremont.su/pdf/gost_34_11_2012.pdf)
+* [GOST R 34.11–2012 «Information technology. Cryptographic data security. Hash-function»](https://tc26.ru/en/standards/standards/gost-r/gost-r-34-11-2012-information-technology-cryptographic-data-security-hash-function.html)
+* [Presentation](https://okazymyrov.github.io/assets/attachments/presentations/2012/65e253dda44af1d34db14c2b752d1f.pdf)
 * [MDS matrix generator](https://github.com/okazymyrov/MDS)
